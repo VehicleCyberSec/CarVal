@@ -1,0 +1,507 @@
+/******************************************************/
+/****         Predicates Declaration              *****/
+/******************************************************/
+
+
+primitive(vulExists(_entity, _vulDes, _fea, _imp)).
+
+
+/* My New Primitives*/
+primitive(attackerCanAccess(_ecu, _channel, _fea)).
+primitive(ecuUpdatedByChannel(_ecu, _channel)).
+primitive(ecuControlledbyChannel(_ecu, _channel)).
+primitive(ecuOnBus(_ecu, _bus)).
+primitive(busTypeBroadcast(_bus)).
+primitive(differentBus(_bus, _bus1)).
+primitive(differentGTW(_gtw, _gtw1)).
+primitive(remoteControlEnabled(_app, _channel, _ecu)).
+primitive(ecusConnected(_ecu1, _channel, _ecu2)).
+primitive(telematicsControlCanReach(_ecu1)).
+primitive(ecuControlCanReach(_ecu1, _ecu2)).
+primitive(ecuControlledbyServer(_ecu1)).
+primitive(ecuReceiveControlFrom(_ecu1, _ecu2)).
+primitive(ecuConnectedToServer(_ecu1, _ecu2)).
+
+
+
+/* My New Derived Facts*/
+
+derived(invokeReplayControl(_ecu, _source, _channel)).
+
+
+
+derived(modFirmware(_ecu, _channel)).
+derived(execCode(_ecu, _priv)).
+derived(attackerExtractFirmware(_ecu, _channel)).
+derived(attackerReverseFirmware(_ecu)).
+derived(attackerFlashFirmware(_ecu, _channel)).
+derived(attackerStealKeys(_ecu)).
+derived(attackerReplayControl(_ecu, _channel)).
+derived(attackerBroadcastOnBusFrom(_ecu, _bus)).
+derived(attackerBroadcastOnBus(_bus)).
+derived(inDomainBroadcastAttackECU(_ecu, _bus, _ecu2)).
+derived(crossDomainBroadcastAttackBus(_bus, _ecu, _bus2)).
+derived(crossDomainBroadcastAttackMultiHop(_bus, _ecu, _bus2)).
+derived(crossDomainBroadcastAttackECU(_ecu)).
+derived(attackerCompromiseAppAuthProcess(_app, _ecu)).
+derived(attackerCompromiseSecrectKey(_app)).
+derived(attackerReplayControlbyAPP(_ecu)).
+derived(attackerReplayControlbyECU(_ecu, _ecu2)).
+
+derived(attackerBroadcastToBus(_bus)).
+derived(attackerBroadcastToECU(_ecu)).
+
+derived(attackerInstallMalware(_ecu)).
+derived(attackerSendControltoECU(_ecu)).
+
+derived(attackerObtainSecKeyfromServer(_ecu)).
+derived(attackerGetServerShell(_ecu)).
+derived(attackerSendServerControlTo(_ecu)).
+
+
+meta(attackGoal(_)).
+meta(advances(_, _)).
+
+/******************************************************/
+/****         Tabling Predicates                  *****/
+/*   All derived predicates should be tabled          */
+/******************************************************/
+
+
+:- table vulExists/4.
+
+/* My New Tabling Predicates*/
+
+:- table invokeReplayControl/3.
+:- table modFirmware/2.
+:- table execCode/2.
+:- table attackerExtractFirmware/2.
+:- table attackerReverseFirmware/1.
+:- table attackerFlashFirmware/2.
+:- table attackerStealKeys/1.
+:- table attackerReplayControl/2.
+:- table attackerBroadcastOnBusFrom/2.
+:- table attackerBroadcastOnBus/1.
+:- table inDomainBroadcastAttackECU/3.
+:- table crossDomainBroadcastAttackBus/3.
+:- table crossDomainBroadcastAttackMultiHop/3.
+:- table crossDomainBroadcastAttackECU/1.
+:- table attackerCompromiseAppAuthProcess/2.
+:- table attackerCompromiseSecrectKey/1.
+:- table attackerReplayControlbyAPP/1.
+:- table attackerReplayControlbyECU/2.
+
+:- table attackerBroadcastToBus/1.
+:- table attackerBroadcastToECU/1.
+
+:- table attackerInstallMalware/1.
+:- table attackerSendControltoECU/1.
+:- table attackerObtainSecKeyfromServer/1.
+:- table attackerGetServerShell/1.
+:- table attackerSendServerControlTo/1.
+
+
+
+
+/******************************************************/
+/****         Interaction Rules                   *****/
+/******************************************************/
+
+interaction_rule(
+   (modFirmware(ECU, Channel) :-
+   attackerCanAccess(ECU, Channel, Fea),
+   vulExists(ECU, 'unsecureBootOrUpdate', Fea2, Imp)),
+   rule_desc('Firmware Modification Fea03 Imp18',
+   0.5)).
+
+
+
+
+
+/* comment for now */
+interaction_rule(
+   (execCode(ECU, 'Root') :-
+   execCode(ECU, 'noRoot'),
+   vulExists(ECU, 'privEscape', Fea, Imp)),
+   rule_desc('Priviledge Escape Fea05 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (execCode(ECU, 'noRoot') :-
+   attackerCanAccess(ECU, Channel, Fea),
+   vulExists(ECU, 'lowPrivCodeExec', Fea2, Imp)),
+   rule_desc('lowPriv code execution Fea06 Imp13',
+   0.5)).
+
+
+interaction_rule(
+   (execCode(ECU, 'Root') :-
+   modFirmware(ECU, Channel)),
+   rule_desc('Modify firmware for root execCode Fea03 Imp18',
+   0.5)).
+
+
+interaction_rule(
+   (attackerExtractFirmware(ECU, 'physical') :-
+   attackerCanAccess(ECU, 'physical', Fea),
+   vulExists(ECU, 'unsecureHardwareDesign', Fea2, Imp)),
+   rule_desc('Physically extract firmware',
+   0.5)).   
+
+
+interaction_rule(
+   (attackerExtractFirmware(ECU, Channel) :-
+   attackerCanAccess(ECU, Channel, Fea),
+   vulExists(ECU, 'unsecureUpdateChannel', Fea2, Imp),
+   ecuUpdatedByChannel(ECU, Channel)),
+   rule_desc('Extract firmware by update',
+   0.5)).
+
+
+interaction_rule(
+   (attackerReverseFirmware(ECU) :-
+   attackerExtractFirmware(ECU, Channel),
+   vulExists(ECU, 'firmwareLackObfusOrEncry', Fea2, Imp)),
+   rule_desc('Firmware reverse engineering',
+   0.5)).      
+
+
+interaction_rule(
+   (attackerFlashFirmware(ECU, Channel) :-
+   attackerReverseFirmware(ECU),
+   vulExists(ECU, 'poorAuthForUpdate', Fea2, Imp),
+   attackerCanAccess(ECU, Channel, Fea2),
+   ecuUpdatedByChannel(ECU, Channel)),
+   rule_desc('Install malicious firmware',
+   0.5)).
+
+
+interaction_rule(
+   (execCode(ECU, 'Root') :-
+   attackerFlashFirmware(ECU, Channel)),
+   rule_desc('Flash firmware for Root Fea06 Imp15',
+   0.5)).
+
+
+
+interaction_rule(
+   (attackerStealKeys(ECU) :-
+   execCode(ECU, _),
+   vulExists(ECU, 'unsafeStoreKeys', Fea, Imp)),
+   rule_desc('Steal keys in ECU by execCode Fea06 Imp15',
+   0.5)).
+
+
+
+interaction_rule(
+   (attackerStealKeys(ECU) :-
+   attackerCanAccess(ECU, Channel, Fea),
+   vulExists(Channel, 'unsafeTransmitKeys', Fea2, Imp)),
+   rule_desc('Steal keys in ECU by unsafe channel Fea06 Imp15',
+   0.5)).
+
+
+
+interaction_rule(
+   (attackerReplayControl(ECU, Channel) :-
+   attackerCanAccess(ECU, Channel, Fea),
+   ecuControlledbyChannel(ECU, Channel),
+   vulExists(ECU, 'poorAuthForReplayControl', Fea2, Imp)),
+   rule_desc('TCU replay control by poor auth design Fea06 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (attackerReplayControl(ECU, Channel) :-
+   attackerCanAccess(ECU, Channel, Fea),
+   ecuControlledbyChannel(ECU, Channel),
+   attackerStealKeys(ECU)),
+   rule_desc('TCU replay control by stealing keys Fea06 Imp15',
+   0.5)).
+
+
+/* To discuss Ether Later */
+
+interaction_rule(
+   (attackerBroadcastOnBusFrom(ECU, Bus) :-
+   execCode(ECU, 'Root'),
+   ecuOnBus(ECU, Bus),
+   busTypeBroadcast(Bus),
+   vulExists(ECU, 'unauthorizedBroadcast', Fea, Imp)),
+   rule_desc('Broadcast on Bus via compromised ECU from Root Fea04 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (attackerBroadcastOnBusFrom(ECU, Bus) :-
+   execCode(ECU, 'noRoot'),
+   ecuOnBus(ECU, Bus),
+   busTypeBroadcast(Bus),
+   vulExists(ECU, 'unauthorizedBroadcast', Fea, Imp)),
+   rule_desc('Broadcast on Bus via compromised ECU from noRoot Fea04 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (attackerBroadcastOnBus(Bus) :-
+   execCode(ECU, 'Root'),
+   ecuOnBus(ECU, Bus),
+   busTypeBroadcast(Bus),
+   vulExists(ECU, 'unauthorizedBroadcast', Fea, Imp)),
+   rule_desc('Broadcast on Bus via compromised ECU from Root Fea06 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (attackerBroadcastOnBus(Bus) :-
+   execCode(ECU, 'noRoot'),
+   ecuOnBus(ECU, Bus),
+   busTypeBroadcast(Bus),
+   vulExists(ECU, 'unauthorizedBroadcast', Fea, Imp)),
+   rule_desc('Broadcast on Bus via compromised ECU from noRoot Fea04 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (attackerBroadcastOnBus(Bus) :-
+   attackerCanAccess(ECU, 'physical', Fea),
+   ecuOnBus(ECU, Bus),
+   busTypeBroadcast(Bus),
+   vulExists(ECU, 'unauthorizedBroadcast', Fea2, Imp)),
+   rule_desc('Broadcast on Bus via direct access Fea04 Imp15',
+   0.5)).
+
+
+
+interaction_rule(
+   (attackerBroadcastOnBus(Bus) :-
+   attackerBroadcastOnBus(Bus2),
+   differentBus(Bus, Bus2),
+   ecuOnBus(ECU, Bus),
+   ecuOnBus(ECU, Bus2),
+   busTypeBroadcast(Bus2),
+   vulExists(ECU, 'badforwading', Fea, Imp)),
+   rule_desc('Broadcast to another Bus via message forwarding Fea04 Imp15',
+   0.5)).
+
+
+
+
+   
+
+interaction_rule(
+   (inDomainBroadcastAttackECU(ECU, Bus, ECU2) :-
+   attackerBroadcastOnBusFrom(ECU2, Bus),
+   ecuOnBus(ECU, Bus),
+   ecuOnBus(ECU2, Bus),
+   vulExists(Bus, 'lackMessageAuth', Fea, Imp)),
+   rule_desc('attack ECU by Broadcasting on Bus Fea09 Imp13',
+   0.5)).
+
+
+
+
+interaction_rule(
+   (crossDomainBroadcastAttackBus(Bus, GTW, Bus2) :-
+   inDomainBroadcastAttackECU(GTW, Bus2, ECU),
+   ecuOnBus(GTW, Bus),
+   busTypeBroadcast(Bus),
+   differentBus(Bus, Bus2),
+   vulExists(GTW, 'badForwarding', Fea, Imp)),
+   rule_desc('broadcasting on BusA via bypassing GTW from BusB Fea07 Imp15',
+   0.5)).
+
+
+
+interaction_rule(
+   (crossDomainBroadcastAttackMultiHop(Bus, GTW2, Bus2) :-
+   crossDomainBroadcastAttackBus(Bus2, GTW, Bus3),
+   ecuOnBus(GTW2, Bus2),
+   busTypeBroadcast(Bus),
+   differentBus(Bus, Bus2),
+   differentBus(Bus, Bus3),
+   differentGTW(GTW, GTW2),
+   vulExists(GTW2, 'badForwarding', Fea, Imp)),
+   rule_desc('multi-hop cross-domain broadcasting',
+   0.5)).
+
+
+
+interaction_rule(
+   (crossDomainBroadcastAttackECU(ECU) :-
+   crossDomainBroadcastAttackBus(Bus, GTW, Bus2),
+   ecuOnBus(ECU, Bus),
+   vulExists(ECU, 'lackMessageAuth', Fea, Imp)),
+   rule_desc('crossdomain to reach ECU Fea10 Imp15',
+   0.5)).
+
+
+
+interaction_rule(
+   (attackerCompromiseAppAuthProcess(APP, ECU) :-
+   remoteControlEnabled(APP, Channel, ECU),
+   vulExists(APP, 'lackProtectionOnAppCode', Fea, Imp)),
+   rule_desc('attacker reverse-engineer APP Fea10 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (attackerCompromiseSecrectKey(APP) :-
+   attackerCanAccess(APP, Channel, 'Fea07'),
+   vulExists(APP, 'impropoerKeyStorage', Fea, Imp)),
+   rule_desc('attacker obtain sec Key APP Fea10 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (attackerReplayControlbyAPP(ECU) :-
+   attackerCompromiseAppAuthProcess(APP, ECU),
+   attackerCompromiseSecrectKey(APP)),
+   rule_desc('replay control via APP malware Fea10 Imp15',
+   0.5)).
+
+
+
+
+interaction_rule(
+   (attackerReplayControlbyECU(ECU1, ECU) :-
+   telematicsControlCanReach(ECU),
+   attackerReplayControlbyAPP(ECU1)),
+   rule_desc('replay control via TCU to reach another ECU Fea10 Imp15',
+   0.5)).
+
+
+
+
+
+interaction_rule(
+   (execCode(ECU2, 'noRoot') :-
+   ecusConnected(ECU1, Channel, ECU2),
+   execCode(ECU1, 'Root'),
+   vulExists(ECU2, 'lowPrivCodeExec', Fea, Imp)),
+   rule_desc('Expand code execution Fea10 Imp15',
+   0.5)).
+
+/* My New Rules: Up*/
+
+
+
+
+
+interaction_rule(
+   (attackerBroadcastToBus(Bus) :-
+   execCode(ECU, 'Root'),
+   ecuOnBus(ECU, Bus),
+   busTypeBroadcast(Bus),
+   vulExists(ECU, 'unauthorizedBroadcast', Fea, Imp)),
+   rule_desc('Broadcast on Bus via compromised ECU from Root Fea06 Imp15',
+   0.5)).
+
+
+interaction_rule(
+   (attackerBroadcastToBus(Bus) :-
+   execCode(ECU, 'noRoot'),
+   ecuOnBus(ECU, Bus),
+   busTypeBroadcast(Bus),
+   vulExists(ECU, 'unauthorizedBroadcast', Fea, Imp)),
+   rule_desc('Broadcast on Bus via compromised ECU from noRoot Fea04 Imp15',
+   0.5)).
+
+
+
+/* in domain: to bus*/
+interaction_rule(
+   (attackerBroadcastToECU(ECU) :-
+   attackerBroadcastToBus(Bus),
+   ecuOnBus(ECU, Bus),
+   vulExists(ECU, 'lackMessageAuth', Fea, Imp)),
+   rule_desc('attack ECU by Broadcasting on Bus Fea05 Imp13',
+   0.5)).
+
+
+
+
+/* cross bus: to bus*/
+interaction_rule(
+   (attackerBroadcastToBus(Bus) :-
+   attackerBroadcastToECU(ECU),
+   ecuOnBus(ECU, Bus),
+   vulExists(ECU, 'badForwarding', Fea, Imp)),
+   rule_desc('broacasting to gtw and compromise another bus Fea09 Imp13',
+   0.5)).
+
+
+
+
+
+
+/* IVI malware */
+
+interaction_rule(
+   (attackerInstallMalware(ECU) :-
+   attackerCanAccess(ECU, Channel, Fea),
+   vulExists(ECU, 'lackCheckOnApk', Fea2, Imp)),
+   rule_desc('inject malware APK on ECU Fea09 Imp13',
+   0.5)).
+
+
+interaction_rule(
+   (execCode(ECU, 'Root') :-
+   attackerInstallMalware(ECU),
+   vulExists(ECU, 'privEscape', Fea2, Imp)),
+   rule_desc('root ECU by Malware Fea09 Imp13',
+   0.5)).
+
+
+
+interaction_rule(
+   (attackerSendControltoECU(ECU2) :-
+   execCode(ECU, 'Root'),
+   ecuControlCanReach(ECU, ECU2),
+   vulExists(ECU, 'vulControlSendingProcess', Fea, Imp)),
+   rule_desc('send control command to ECU Fea09 Imp13',
+   0.5)).
+
+
+
+interaction_rule(
+   (attackerObtainSecKeyfromServer(ECU) :-
+   attackerCanAccess(ECU, Channel, Fea),
+   vulExists(ECU, 'impropoerServerKeyStorage', Fea2, Imp)),
+   rule_desc('get key from server Fea09 Imp13',
+   0.5)).
+
+
+
+interaction_rule(
+   (attackerStealKeys(ECU) :-
+   attackerCanAccess(ECU, Channel, Fea),
+   vulExists(ECU, 'unsafeStoreKeys', Fea2, Imp)),
+   rule_desc('Steal keys in ECU by access Fea06 Imp15',
+   0.5)).
+
+interaction_rule(
+   (attackerGetServerShell(ECU) :-
+   attackerStealKeys(ECU2),
+   ecuConnectedToServer(ECU2, ECU),
+   vulExists(ECU, 'serverShellExposed', Fea, Imp)),
+   rule_desc('get server shell Fea09 Imp13',
+   0.5)).
+   
+
+interaction_rule(
+   (attackerSendServerControlTo(ECU2) :-
+   attackerGetServerShell(ECU),
+   ecuConnectedToServer(ECU2, ECU),
+   vulExists(ECU, 'vulSendingControl', Fea, Imp)),
+   rule_desc('send command from Server to ECU Fea09 Imp13',
+   0.5)).
+
+
+interaction_rule(
+   (attackerSendControltoECU(ECU2) :-
+   ecuReceiveControlFrom(ECU2, ECU),
+   attackerSendServerControlTo(ECU1)),
+   rule_desc('send control command to ECU Fea09 Imp13',
+   0.5)).

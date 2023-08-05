@@ -1,0 +1,578 @@
+/*
+
+Input should include:
+
+    1. Attack goal.
+    2. Vehicle Info, including topology, bus types, ECU types...
+    3. Assumed vulExists() set.
+
+*/
+
+/* input test: mod firmware
+
+attackerCanAccess(ivi, wifi).
+attackGoal(execCode(_,_)).
+
+vulExists(ivi, 'unsecureBootOrUpdate').
+vulExists(ivi, 'privEscape').
+vulExists(ivi, 'lowPrivCodeExec').
+
+*/
+
+
+
+/* input test: update...
+
+attackerCanAccess(ivi, 'physical').
+attackGoal(execCode(_,_)).
+
+attackGoal(attackerStealKeys(_)).
+
+attackerCanAccess(ivi, 'cellular').
+ecuUpdatedByChannel(ivi, 'cellular').
+vulExists(ivi, 'unsecureHardwareDesign').
+vulExists(ivi, 'unsecureUpdateChannel').
+
+vulExists(ivi, 'firmwareLackObfusOrEncry').
+vulExists(ivi, 'poorAuthForUpdate').
+
+
+
+vulExists(ECU, 'unsafeStoreKeys').
+
+vulExists('cellular', 'unsafeTransmitKeys').
+
+
+*/
+
+
+/* input test: TCU replay...
+attackerCanAccess(tcu, 'BLE').
+ecuControlledbyChannel(tcu, 'BLE').
+
+attackGoal(attackerReplayControl(_,_)).
+
+
+vulExists('BLE', 'unsafeTransmitKeys').
+vulExists(tcu, 'poorAuthForReplayControl').
+*/
+
+
+
+
+/* input test: in domain attack from ivi to gtw
+
+attackerCanAccess(ivi, wifi).
+attackGoal(inDomainBroadcastAttack(gtw,_,_)).
+
+vulExists(ivi, 'lowPrivCodeExec').
+
+vulExists(ivi, 'unauthorizedBroadcast').
+vulExists(infoCAN, 'lackMessageAuth').
+
+
+ecuOnBus(ivi, infoCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+
+*/
+
+
+
+/* input test: cross domain attack from infoCAN to bdCAN
+
+attackerCanAccess(ivi, wifi).
+attackGoal(crossDomainBroadcastAttack(bdCAN,_,_)).
+
+vulExists(ivi, 'lowPrivCodeExec').
+
+vulExists(ivi, 'unauthorizedBroadcast').
+vulExists(infoCAN, 'lackMessageAuth').
+vulExists(gtw, 'badForwarding').
+
+
+differentBus(bdCAN, infoCAN).
+differentBus(infoCAN, bdCAN).
+
+
+ecuOnBus(ivi, infoCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+busTypeBroadcast(bdCAN).
+
+ecuOnBus(gtw, bdCAN).
+
+*/
+
+
+
+/* input test: multi-hop cross domain attack: not applicable in our current attacks
+
+
+attackerCanAccess(ivi, wifi).
+attackGoal(crossDomainBroadcastAttackMultiHop(_,_,_)).
+
+vulExists(ivi, 'lowPrivCodeExec').
+
+vulExists(ivi, 'unauthorizedBroadcast').
+vulExists(infoCAN, 'lackMessageAuth').
+vulExists(gtw, 'badForwarding').
+
+
+differentBus(bdCAN, infoCAN).
+differentBus(infoCAN, bdCAN).
+differentBus(ptCAN, infoCAN).
+differentBus(infoCAN, ptCAN).
+differentBus(bdCAN, ptCAN).
+differentBus(ptCAN, bdCAN).
+differentGTW(gtw, gtw2).
+differentGTW(gtw2, gtw).
+
+ecuOnBus(ivi, infoCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+busTypeBroadcast(bdCAN).
+
+
+ecuOnBus(gtw, bdCAN).
+
+ecuOnBus(gtw2, bdCAN).
+ecuOnBus(gtw2, ptCAN).
+busTypeBroadcast(ptCAN).
+vulExists(gtw2, 'badForwarding').
+vulExists(ptCAN, 'lackMessageAuth').
+
+*/
+
+
+
+/* input test:   Toy example */
+
+/*
+attackerCanAccess(ivi, wifi, 'Fea09').
+
+
+attackGoal(attackerBroadcastOnBus(ivi, infoCAN)).
+
+
+vulExists(ivi, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+
+vulExists(ivi, 'unauthorizedBroadcast', 'Fea07', 'Imp15').
+vulExists(infoCAN, 'lackMessageAuth', 'Fea09', 'Imp15').
+vulExists(gtw, 'badForwarding', 'Fea08', 'Imp15').
+
+
+differentBus(bdCAN, infoCAN).
+differentBus(infoCAN, bdCAN).
+
+
+ecuOnBus(ivi, infoCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+busTypeBroadcast(bdCAN).
+
+
+ecuOnBus(bcm, bdCAN).
+ecuOnBus(gtw, bdCAN).
+
+vulExists(bcm, 'lackMessageAuth', 'Fea09', 'Imp15').
+
+*/
+
+
+
+
+
+
+/* input test:   APP replay */
+
+/*
+
+
+attackerCanAccess(tcu, ble, 'Fea07').
+attackerCanAccess(app, malware, 'Fea07').
+
+
+attackGoal(attackerReplayControlbyAPP(_)).
+
+
+remoteControlEnabled(app, ble, tcu).
+
+vulExists(app, 'lackProtectionOnAppCode', 'Fea08', 'Imp13').
+vulExists(app, 'impropoerKeyStorage', 'Fea08', 'Imp13').
+
+*/
+
+
+
+
+/* input test:  APE Root */
+
+/*
+
+
+attackerCanAccess(ivi, wifi, 'Fea09').
+
+
+attackGoal(execCode(ape,_)).
+
+
+
+vulExists(ivi, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+vulExists(ape, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+
+
+vulExists(ivi, 'privEscape', 'Fea09', 'Imp15').
+vulExists(ape, 'privEscape', 'Fea09', 'Imp15').
+
+
+
+
+ecusConnected(ivi, ethernet, ape).
+
+
+*/
+
+
+
+/* input test:   APP replay: new */
+
+/*
+
+
+attackerCanAccess(tcu, ble, 'Fea07').
+attackerCanAccess(app, malware, 'Fea07').
+
+attackGoal(attackerReplayControlbyECU(_, _)).
+
+remoteControlEnabled(app, ble, tcu).
+
+vulExists(app, 'lackProtectionOnAppCode', 'Fea08', 'Imp13').
+vulExists(app, 'impropoerKeyStorage', 'Fea08', 'Imp13').
+
+telematicsControlCanReach(bcm).
+
+
+*/
+
+
+/* input test:   prioritize complete */
+
+/*
+
+
+attackerCanAccess(e1, wifi, 'Fea09').
+attackGoal(attackerBroadcastToECU(e2)).
+
+
+
+vulExists(e1, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+
+vulExists(e1, 'unauthorizedBroadcast', 'Fea07', 'Imp15').
+vulExists(e3, 'badForwarding', 'Fea08', 'Imp15').
+
+vulExists(b1, 'lackMessageAuth', 'Fea09', 'Imp15').
+vulExists(b2, 'lackMessageAuth', 'Fea09', 'Imp15').
+vulExists(b3, 'lackMessageAuth', 'Fea09', 'Imp15').
+
+
+busTypeBroadcast(b1).
+busTypeBroadcast(b2).
+busTypeBroadcast(b3).
+
+ecuOnBus(e1, b1).
+ecuOnBus(e1, b2).
+ecuOnBus(e2, b1).
+ecuOnBus(e2, b3).
+ecuOnBus(e3, b2).
+ecuOnBus(e3, b3).
+
+vulExists(e2, 'lackMessageAuth', 'Fea09', 'Imp15').
+vulExists(e3, 'lackMessageAuth', 'Fea09', 'Imp15').
+
+*/
+
+
+
+
+/* input test:   prioritize short path */
+
+/*
+
+attackerCanAccess(e1, wifi, 'Fea09').
+attackGoal(attackerBroadcastToECU(e2)).
+
+
+
+vulExists(e1, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+
+vulExists(e1, 'unauthorizedBroadcast', 'Fea07', 'Imp15').
+vulExists(e3, 'badForwarding', 'Fea03', 'Imp15').
+
+vulExists(b1, 'lackMessageAuth', 'Fea08', 'Imp15').
+vulExists(b2, 'lackMessageAuth', 'Fea08', 'Imp15').
+vulExists(b3, 'lackMessageAuth', 'Fea08', 'Imp15').
+
+
+busTypeBroadcast(b1).
+busTypeBroadcast(b2).
+busTypeBroadcast(b3).
+
+ecuOnBus(e1, b1).
+ecuOnBus(e1, b2).
+ecuOnBus(e2, b1).
+ecuOnBus(e2, b3).
+ecuOnBus(e3, b2).
+ecuOnBus(e3, b3).
+
+vulExists(e2, 'lackMessageAuth', 'Fea08', 'Imp19').
+
+
+*/
+
+
+
+
+
+/* input test:   prioritize long path */
+/*
+
+
+attackerCanAccess(e1, wifi, 'Fea09').
+attackGoal(attackerBroadcastToECU(e2)).
+
+
+
+vulExists(e1, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+
+vulExists(e1, 'unauthorizedBroadcast', 'Fea07', 'Imp15').
+vulExists(e3, 'badForwarding', 'Fea08', 'Imp15').
+
+vulExists(b1, 'lackMessageAuth', 'Fea07', 'Imp15').
+vulExists(b2, 'lackMessageAuth', 'Fea07', 'Imp15').
+vulExists(b3, 'lackMessageAuth', 'Fea07', 'Imp15').
+
+
+busTypeBroadcast(b2).
+busTypeBroadcast(b3).
+
+ecuOnBus(e1, b1).
+ecuOnBus(e1, b2).
+ecuOnBus(e2, b1).
+ecuOnBus(e2, b3).
+ecuOnBus(e3, b2).
+ecuOnBus(e3, b3).
+
+vulExists(e2, 'lackMessageAuth', 'Fea07', 'Imp15').
+vulExists(e3, 'lackMessageAuth', 'Fea07', 'Imp15').
+*/
+
+
+
+
+/* input test:  IVI malware */
+/*
+
+attackerCanAccess(ivi, wifi, 'Fea07').
+
+attackGoal(attackerSendControltoECU(bcm)).
+
+vulExists(ivi, 'lackCheckOnApk', 'Fea08', 'Imp13').
+vulExists(ivi, 'lowPrivCodeExec', 'Fea08', 'Imp13').
+vulExists(ivi, 'privEscape', 'Fea08', 'Imp13').
+vulExists(ivi, 'vulControlSendingProcess', 'Fea08', 'Imp13').
+
+ecuControlCanReach(ivi, bcm).
+
+*/
+
+
+
+
+
+
+/* input test:  IVI malware */
+/*
+attackerCanAccess(tcu, physical, 'Fea08').
+attackGoal(attackerSendControltoECU(bcm)).
+
+vulExists(tcu, 'unsafeStoreKeys', 'Fea08', 'Imp13').
+vulExists(server, 'serverShellExposed', 'Fea08', 'Imp13').
+vulExists(server, 'vulSendingControl', 'Fea08', 'Imp13').
+
+
+ecuControlledbyServer(tcu).
+ecuReceiveControlFrom(bcm, tcu).
+ecuConnectedToServer(tcu, server).
+*/
+
+
+
+
+/* input test: Path.1: From browser to bcm */
+
+
+/* 
+
+attackerCanAccess(ivi, browser, 'Fea09').
+
+
+attackGoal(crossDomainBroadcastAttackECU(bcm)).
+
+
+vulExists(ivi, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+
+vulExists(ivi, 'unauthorizedBroadcast', 'Fea07', 'Imp15').
+vulExists(infoCAN, 'lackMessageAuth', 'Fea09', 'Imp15').
+vulExists(gtw, 'badForwarding', 'Fea08', 'Imp15').
+
+
+differentBus(bdCAN, infoCAN).
+differentBus(infoCAN, bdCAN).
+
+
+ecuOnBus(ivi, infoCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+busTypeBroadcast(bdCAN).
+
+
+ecuOnBus(bcm, bdCAN).
+ecuOnBus(gtw, bdCAN).
+
+vulExists(bcm, 'lackMessageAuth', 'Fea09', 'Imp15').
+
+*/
+
+
+
+/* input test: Toy example: NEW (Prior.1: from IVI to broadcast infoCAN) */
+
+/*
+
+attackerCanAccess(ivi, wifi, 'Fea09').
+
+
+attackGoal(attackerBroadcastOnBus(infoCAN)).
+
+
+vulExists(ivi, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+
+vulExists(ivi, 'unauthorizedBroadcast', 'Fea08', 'Imp15').
+vulExists(infoCAN, 'lackMessageAuth', 'Fea09', 'Imp15').
+vulExists(gtw, 'badForwarding', 'Fea08', 'Imp15').
+
+
+differentBus(bdCAN, infoCAN).
+differentBus(infoCAN, bdCAN).
+
+
+ecuOnBus(ivi, infoCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+busTypeBroadcast(bdCAN).
+
+
+ecuOnBus(bcm, bdCAN).
+ecuOnBus(gtw, bdCAN).
+
+vulExists(bcm, 'lackMessageAuth', 'Fea09', 'Imp15').
+
+*/
+
+
+
+/* input test: Toy example: NEW (Prior.2: from IVI firmmode to broadcast infoCAN) */
+
+/*
+
+attackerCanAccess(ivi, wifi, 'Fea09').
+
+attackGoal(attackerBroadcastOnBus(infoCAN)).
+
+
+vulExists(ivi, 'unauthorizedBroadcast', 'Fea08', 'Imp15').
+vulExists(infoCAN, 'lackMessageAuth', 'Fea09', 'Imp15').
+vulExists(gtw, 'badForwarding', 'Fea08', 'Imp15').
+
+vulExists(ivi, 'unsecureBootOrUpdate', 'Fea04', 'Imp15').
+
+differentBus(bdCAN, infoCAN).
+differentBus(infoCAN, bdCAN).
+
+
+ecuOnBus(ivi, infoCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+busTypeBroadcast(bdCAN).
+
+
+ecuOnBus(bcm, bdCAN).
+ecuOnBus(gtw, bdCAN).
+
+vulExists(bcm, 'lackMessageAuth', 'Fea09', 'Imp15').
+
+
+*/
+
+/* input test: Toy example: NEW (Prior.3: from OBD to InfoCAN */
+
+
+/*
+
+attackGoal(attackerBroadcastOnBus(infoCAN)).
+
+attackerCanAccess(obd, 'physical', 'Fea01').
+
+ecuOnBus(obd, diagCAN).
+busTypeBroadcast(diagCAN).
+vulExists(obd, 'unauthorizedBroadcast', 'Fea08', 'Imp15').
+
+vulExists(gtw, 'badforwading', 'Fea08', 'Imp15').
+ecuOnBus(gtw, diagCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+
+differentBus(infoCAN, diagCAN).
+
+*/
+
+
+
+
+/* input test: Toy example: NEW (Prior.1: from IVI browser to broadcast infoCAN) */
+
+
+attackerCanAccess(ivi, wifi, 'Fea09').
+
+
+attackGoal(attackerBroadcastOnBusFrom(ivi, infoCAN)).
+
+
+vulExists(ivi, 'lowPrivCodeExec', 'Fea06', 'Imp15').
+vulExists(ivi, 'unauthorizedBroadcast', 'Fea07', 'Imp15').
+vulExists(infoCAN, 'lackMessageAuth', 'Fea09', 'Imp15').
+vulExists(gtw, 'badForwarding', 'Fea08', 'Imp15').
+
+
+differentBus(bdCAN, infoCAN).
+differentBus(infoCAN, bdCAN).
+
+
+ecuOnBus(ivi, infoCAN).
+ecuOnBus(gtw, infoCAN).
+busTypeBroadcast(infoCAN).
+busTypeBroadcast(bdCAN).
+
+
+ecuOnBus(bcm, bdCAN).
+ecuOnBus(gtw, bdCAN).
+
+vulExists(bcm, 'lackMessageAuth', 'Fea09', 'Imp15').
+
+
+
+
+
+
+

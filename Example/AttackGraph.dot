@@ -1,0 +1,19 @@
+digraph G {
+	1 [label="1:attackerBroadcastOnBusFrom(ivi,infoCAN):0",shape=diamond];
+	2 [label="2:RULE 14 (Broadcast on Bus via compromised ECU from noRoot Fea04 Imp15):0",shape=ellipse];
+	3 [label="3:vulExists(ivi,unauthorizedBroadcast,'Fea07','Imp15'):1",shape=box];
+	4 [label="4:busTypeBroadcast(infoCAN):1",shape=box];
+	5 [label="5:ecuOnBus(ivi,infoCAN):1",shape=box];
+	6 [label="6:execCode(ivi,noRoot):0",shape=diamond];
+	7 [label="7:RULE 2 (lowPriv code execution Fea06 Imp13):0",shape=ellipse];
+	8 [label="8:vulExists(ivi,lowPrivCodeExec,'Fea06','Imp15'):1",shape=box];
+	9 [label="9:attackerCanAccess(ivi,wifi,'Fea09'):1",shape=box];
+	3 -> 	2;
+	4 -> 	2;
+	5 -> 	2;
+	8 -> 	7;
+	9 -> 	7;
+	7 -> 	6;
+	6 -> 	2;
+	2 -> 	1;
+}
