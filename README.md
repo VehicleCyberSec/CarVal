@@ -42,6 +42,8 @@ CarVal is a tool for automatic attack path reasoning and risk assessment in mode
 
 ## An Example
 
+Following is an example of generated attack path.
+
 ![Risk Assessment Output](Example/risk_assess_output.png)
 
 
